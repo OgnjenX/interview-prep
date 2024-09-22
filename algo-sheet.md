@@ -33,20 +33,20 @@ Template
 ```
 
 Example
-```javascript
+```C++
 // Find the maximum sum subarray of size `k`:
-function maxSumSubarray(arr: number[], k: number): number {
-    let start = 0;
-    let currentSum = 0;
-    let maxSum = Number.NEGATIVE_INFINITY;
+int maxSumSubarray(const std::vector<int>& arr, int k) {
+    int start = 0;
+    int currentSum = 0;
+    int maxSum = std::numeric_limits<int>::min();
 
-    for (let end = 0; end < arr.length; end++) {
+    for (int end = 0; end < arr.size(); ++end) {
         currentSum += arr[end];
 
-        if (end - start + 1 === k) {
-            maxSum = Math.max(maxSum, currentSum);
+        if (end - start + 1 == k) {
+            maxSum = std::max(maxSum, currentSum);
             currentSum -= arr[start];
-            start++;
+            ++start;
         }
     }
 
@@ -79,25 +79,25 @@ Template
 ```
 
 Example
-```javascript
+```C++
 // In a sorted array, find a pair of elements that sum up to a given target:
-function twoSumSorted(arr: number[], target: number): [number, number] | null {
-    let start = 0;
-    let end = arr.length - 1;
+std::pair<int, int> twoSumSorted(const std::vector<int>& arr, int target) {
+    int start = 0;
+    int end = arr.size() - 1;
 
     while (start < end) {
-        const currentSum = arr[start] + arr[end];
+        int currentSum = arr[start] + arr[end];
 
-        if (currentSum === target) {
-            return [arr[start], arr[end]];
+        if (currentSum == target) {
+            return {arr[start], arr[end]};
         } else if (currentSum < target) {
-            start++;
+            ++start;
         } else {
-            end--;
+            --end;
         }
     }
 
-    return null; // No pair found
+    return {-1, -1}; // No pair found
 }
 ```
 
@@ -191,82 +191,93 @@ Helper Method - MoveToHead(node):
 ```
 
 Example
-```javascript
+```C++
 class ListNode {
-    key: number;
-    value: number;
-    prev: ListNode | null = null;
-    next: ListNode | null = null;
+public:
+    int key;
+    int value;
+    ListNode* prev;
+    ListNode* next;
 
-    constructor(key: number, value: number) {
-        this.key = key;
-        this.value = value;
-    }
-}
+    ListNode(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+};
 
 class LRUCache {
-    private capacity: number;
-    private map: Map<number, ListNode>;
-    private head: ListNode;  // Most recently used
-    private tail: ListNode;  // Least recently used
+private:
+    int capacity;
+    std::unordered_map<int, ListNode*> map;
+    ListNode* head;
+    ListNode* tail;
 
-    constructor(capacity: number) {
-        this.capacity = capacity;
-        this.map = new Map();
-        this.head = new ListNode(0, 0);
-        this.tail = new ListNode(0, 0);
-        this.head.next = this.tail;
-        this.tail.prev = this.head;
+    void moveToHead(ListNode* node) {
+        removeNode(node);
+        addToHead(node);
     }
 
-    get(key: number): number {
-        if (!this.map.has(key)) return -1;
-
-        const node = this.map.get(key)!;
-        this.moveToHead(node);
-        return node.value;
+    void addToHead(ListNode* node) {
+        node->prev = head;
+        node->next = head->next;
+        head->next->prev = node;
+        head->next = node;
     }
 
-    put(key: number, value: number): void {
-        if (this.map.has(key)) {
-            const node = this.map.get(key)!;
-            node.value = value;
-            this.moveToHead(node);
+    void removeNode(ListNode* node) {
+        ListNode* prevNode = node->prev;
+        ListNode* nextNode = node->next;
+        prevNode->next = nextNode;
+        nextNode->prev = prevNode;
+    }
+
+    ListNode* removeTail() {
+        ListNode* tailNode = tail->prev;
+        removeNode(tailNode);
+        return tailNode;
+    }
+
+public:
+    LRUCache(int cap) : capacity(cap) {
+        head = new ListNode(0, 0);
+        tail = new ListNode(0, 0);
+        head->next = tail;
+        tail->prev = head;
+    }
+
+    int get(int key) {
+        if (map.find(key) == map.end()) {
+            return -1;
+        }
+        ListNode* node = map[key];
+        moveToHead(node);
+        return node->value;
+    }
+
+    void put(int key, int value) {
+        if (map.find(key) != map.end()) {
+            ListNode* node = map[key];
+            node->value = value;
+            moveToHead(node);
         } else {
-            const newNode = new ListNode(key, value);
-            this.map.set(key, newNode);
-            this.addToHead(newNode);
+            ListNode* newNode = new ListNode(key, value);
+            map[key] = newNode;
+            addToHead(newNode);
 
-            if (this.map.size > this.capacity) {
-                const tailNode = this.removeTail();
-                this.map.delete(tailNode.key);
+            if (map.size() > capacity) {
+                ListNode* tailNode = removeTail();
+                map.erase(tailNode->key);
+                delete tailNode;
             }
         }
     }
 
-    private moveToHead(node: ListNode): void {
-        this.removeNode(node);
-        this.addToHead(node);
+    ~LRUCache() {
+        ListNode* current = head;
+        while (current != nullptr) {
+            ListNode* next = current->next;
+            delete current;
+            current = next;
+        }
     }
-
-    private addToHead(node: ListNode): void {
-        node.prev = this.head;
-        node.next = this.head.next;
-        this.head.next!.prev = node;
-        this.head.next = node;
-    }
-
-    private removeNode(node: ListNode): void {
-        node.prev!.next = node.next;
-        node.next!.prev = node.prev;
-    }
-
-    private removeTail(): ListNode {
-        const tailNode = this.tail.prev!;
-        this.removeNode(tailNode);
-        return tailNode;
-    }
-}
+};
 ```
 
 ## Recursion
@@ -301,15 +312,15 @@ function binarySearch(array, target):
     3. Return "Not Found" or an equivalent indicator (like -1).
 ```
 
-```javascript
-function binarySearch(arr: number[], target: number): number {
-    let left = 0;
-    let right = arr.length - 1;
+```C++
+int binarySearch(const std::vector<int>& arr, int target) {
+    int left = 0;
+    int right = arr.size() - 1;
 
     while (left <= right) {
-        const mid = Math.floor((left + right) / 2);
+        int mid = left + (right - left) / 2;
 
-        if (arr[mid] === target) {
+        if (arr[mid] == target) {
             return mid;  // Target value found, return its index
         }
 
@@ -328,8 +339,8 @@ If you want to find the closest value that's less than the target value in a sor
 
 You can use this property to get the closest value less than the target. After the loop ends, the value at `arr[right]` would be the closest value less than the target (if right is within the bounds of the array).
 
-```javascript
-// White loop here
+```C++
+// While loop here
 while (...)
 
 // Check if 'right' is within bounds
@@ -360,24 +371,23 @@ function countingSort(inputArray, maxValue):
 ```
 
 Example
-```javascript
-function countingSort(arr: number[], maxValue: number): number[] {
+```C++
+std::vector<int> countingSort(const std::vector<int>& arr, int maxValue) {
     // Step 1: Initialize count array
-    const count: number[] = new Array(maxValue + 1).fill(0);
+    std::vector<int> count(maxValue + 1, 0);
 
     // Step 2: Populate count array with frequencies
-    for (let num of arr) {
+    for (int num : arr) {
         count[num]++;
     }
 
     // Step 3-5: Reconstruct the sorted array using the count array
-    let sortedIndex = 0;
-    const sortedArray: number[] = new Array(arr.length);
+    std::vector<int> sortedArray(arr.size());
+    int sortedIndex = 0;
 
-    for (let i = 0; i < count.length; i++) {
+    for (int i = 0; i <= maxValue; ++i) {
         while (count[i] > 0) {
-            sortedArray[sortedIndex] = i;
-            sortedIndex++;
+            sortedArray[sortedIndex++] = i;
             count[i]--;
         }
     }
@@ -390,8 +400,10 @@ function countingSort(arr: number[], maxValue: number): number[] {
 ## Matrix
 
 ### Create an empty X x M matrix:
-```javascript
-const matrix = Array(X).fill(undefined).map(() => Array(M).fill(-1)); // Replace -1 for whatever default value you want
+```C++
+std::vector<std::vector<int>> createMatrix(int X, int M, int defaultValue = -1) {
+    return std::vector<std::vector<int>>(X, std::vector<int>(M, defaultValue));
+}
 ```
 
 ### Transposing a matrix
@@ -399,17 +411,20 @@ The transpose of a matrix is found by interchanging its rows into columns or col
 
 Many grid-based games can be modeled as a matrix, such as Tic-Tac-Toe, Sudoku, Crossword, Connect 4, Battleship, etc. It is not uncommon to be asked to verify the winning condition of the game. For games like Tic-Tac-Toe, Connect 4 and Crosswords, where verification has to be done vertically and horizontally, one trick is to write code to verify the matrix for the horizontal cells, transpose the matrix, and reuse the logic for horizontal verification to verify originally vertical cells (which are now horizontal).
 
-```javascript
-function transpose(matrix: number[][]): number[][] {
-    // Create a new 2D array of size columns x rows of the original matrix
-    const transposed: number[][] = Array.from({ length: matrix[0].length }, () => []);
-    
-    for (let i = 0; i < matrix.length; i++) {
-        for (let j = 0; j < matrix[0].length; j++) {
+```C++
+std::vector<std::vector<int>> transpose(const std::vector<std::vector<int>>& matrix) {
+    if (matrix.empty()) return {};
+
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+    std::vector<std::vector<int>> transposed(cols, std::vector<int>(rows));
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
             transposed[j][i] = matrix[i][j];
         }
     }
-    
+
     return transposed;
 }
 ```
@@ -420,37 +435,35 @@ function transpose(matrix: number[][]): number[][] {
 Adding a sentinel/dummy node at the head and/or tail might help to handle many edge cases where operations have to be performed at the head or the tail. The presence of dummy nodes essentially ensures that operations will never be done on the head or the tail, thereby removing a lot of headache in writing conditional checks to dealing with null pointers. Be sure to remember to remove them at the end of the operation.
 
 Example
-```javascript
+```C++
 class ListNode {
-    val: number;
-    next: ListNode | null = null;
+public:
+    int val;
+    ListNode* next;
 
-    constructor(val?: number, next?: ListNode | null) {
-        this.val = (val === undefined ? 0 : val);
-        this.next = (next === undefined ? null : next);
-    }
-}
+    ListNode(int x) : val(x), next(nullptr) {}
+};
 
-function mergeTwoSortedLists(l1: ListNode | null, l2: ListNode | null): ListNode | null {
-    const dummy = new ListNode(-1);  // Sentinel/dummy node
-    let current = dummy;  // Pointer to build the merged list
+ListNode* mergeTwoSortedLists(ListNode* l1, ListNode* l2) {
+    ListNode dummy(-1);  // Sentinel/dummy node
+    ListNode* current = &dummy;  // Pointer to build the merged list
 
-    while (l1 !== null && l2 !== null) {
-        if (l1.val < l2.val) {
-            current.next = l1;
-            l1 = l1.next;
+    while (l1 != nullptr && l2 != nullptr) {
+        if (l1->val < l2->val) {
+            current->next = l1;
+            l1 = l1->next;
         } else {
-            current.next = l2;
-            l2 = l2.next;
+            current->next = l2;
+            l2 = l2->next;
         }
-        current = current.next!;
+        current = current->next;
     }
 
     // If there are remaining nodes in l1 or l2
-    if (l1 !== null) {
-        current.next = l1;
+    if (l1 != nullptr) {
+        current->next = l1;
     } else {
-        current.next = l2;
+        current->next = l2;
     }
 
     return dummy.next;  // Return the next of dummy as the merged list's head
@@ -489,16 +502,18 @@ A common routine for interval questions is to sort the array of intervals by eac
 ### Checking if two intervals overlap
 Be familiar with writing code to check if two intervals overlap.
 
-```python
-def is_overlap(a, b):
-  return a[0] < b[1] and b[0] < a[1]
+```C++
+bool is_overlap(const std::vector<int>& a, const std::vector<int>& b) {
+    return a[0] < b[1] && b[0] < a[1];
+}
 ```
 Trick to remember: both the higher pos must be greater then both lower pos.
 
 Merging two intervals
-```python
-def merge_overlapping_intervals(a, b):
-  return [min(a[0], b[0]), max(a[1], b[1])]
+```C++
+std::vector<int> merge_overlapping_intervals(const std::vector<int>& a, const std::vector<int>& b) {
+    return {std::min(a[0], b[0]), std::max(a[1], b[1])};
+}
 ```
 
 ## Tree
@@ -515,138 +530,135 @@ Result: 1, 7, 2, 6, 5, 11, 9, 9, 5
 Result: 2, 5, 11, 6, 7, 5, 9, 9, 1
 
 Example (Recursive)
-```javascript
+```C++
 class TreeNode {
-    val: number;
-    left: TreeNode | null = null;
-    right: TreeNode | null = null;
+public:
+    int val;
+    TreeNode* left;
+    TreeNode* right;
 
-    constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
-        this.val = (val === undefined ? 0 : val);
-        this.left = (left === undefined ? null : left);
-        this.right = (right === undefined ? null : right);
-    }
-}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
 
 // In-Order Traversal (Left, Root, Right)
-function inOrderTraversal(root: TreeNode | null): number[] {
-    let result: number[] = [];
-    
-    function helper(node: TreeNode | null) {
-        if (node === null) return;
-        
-        helper(node.left);
-        result.push(node.val);
-        helper(node.right);
-    }
+void inOrderTraversal(TreeNode* root, std::vector<int>& result) {
+    if (root == nullptr) return;
 
-    helper(root);
+    inOrderTraversal(root->left, result);
+    result.push_back(root->val);
+    inOrderTraversal(root->right, result);
+}
+
+std::vector<int> inOrderTraversal(TreeNode* root) {
+    std::vector<int> result;
+    inOrderTraversal(root, result);
     return result;
 }
 
 // Pre-Order Traversal (Root, Left, Right)
-function preOrderTraversal(root: TreeNode | null): number[] {
-    let result: number[] = [];
-    
-    function helper(node: TreeNode | null) {
-        if (node === null) return;
+void preOrderTraversal(TreeNode* root, std::vector<int>& result) {
+    if (root == nullptr) return;
 
-        result.push(node.val);
-        helper(node.left);
-        helper(node.right);
-    }
+    result.push_back(root->val);
+    preOrderTraversal(root->left, result);
+    preOrderTraversal(root->right, result);
+}
 
-    helper(root);
+std::vector<int> preOrderTraversal(TreeNode* root) {
+    std::vector<int> result;
+    preOrderTraversal(root, result);
     return result;
 }
 
 // Post-Order Traversal (Left, Right, Root)
-function postOrderTraversal(root: TreeNode | null): number[] {
-    let result: number[] = [];
+void postOrderTraversal(TreeNode* root, std::vector<int>& result) {
+    if (root == nullptr) return;
 
-    function helper(node: TreeNode | null) {
-        if (node === null) return;
+    postOrderTraversal(root->left, result);
+    postOrderTraversal(root->right, result);
+    result.push_back(root->val);
+}
 
-        helper(node.left);
-        helper(node.right);
-        result.push(node.val);
-    }
-
-    helper(root);
+std::vector<int> postOrderTraversal(TreeNode* root) {
+    std::vector<int> result;
+    postOrderTraversal(root, result);
     return result;
 }
 ```
 
 Example (Iterative)
-```javascript
+```C++
 class TreeNode {
-    val: number;
-    left: TreeNode | null = null;
-    right: TreeNode | null = null;
+public:
+    int val;
+    TreeNode* left;
+    TreeNode* right;
 
-    constructor(val?: number, left?: TreeNode | null, right?: TreeNode | null) {
-        this.val = (val === undefined ? 0 : val);
-        this.left = (left === undefined ? null : left);
-        this.right = (right === undefined ? null : right);
-    }
-}
+    TreeNode(int x) : val(x), left(nullptr), right(nullptr) {}
+};
 
 // In-Order Traversal (Left, Root, Right)
-function inOrderTraversal(root: TreeNode | null): number[] {
-    const result: number[] = [];
-    const stack: TreeNode[] = [];
-    let current: TreeNode | null = root;
+std::vector<int> inOrderTraversal(TreeNode* root) {
+    std::vector<int> result;
+    std::stack<TreeNode*> stack;
+    TreeNode* current = root;
 
-    while (current !== null || stack.length > 0) {
-        while (current !== null) {
+    while (current != nullptr || !stack.empty()) {
+        while (current != nullptr) {
             stack.push(current);
-            current = current.left;
+            current = current->left;
         }
 
-        current = stack.pop()!;
-        result.push(current.val);
-        current = current.right;
+        current = stack.top();
+        stack.pop();
+        result.push_back(current->val);
+        current = current->right;
     }
 
     return result;
 }
 
 // Pre-Order Traversal (Root, Left, Right)
-function preOrderTraversal(root: TreeNode | null): number[] {
-    const result: number[] = [];
-    const stack: TreeNode[] = [];
-    if (root) stack.push(root);
+std::vector<int> preOrderTraversal(TreeNode* root) {
+    std::vector<int> result;
+    if (root == nullptr) return result;
 
-    while (stack.length > 0) {
-        const current = stack.pop()!;
-        result.push(current.val);
+    std::stack<TreeNode*> stack;
+    stack.push(root);
 
-        if (current.right) stack.push(current.right);
-        if (current.left) stack.push(current.left);
+    while (!stack.empty()) {
+        TreeNode* current = stack.top();
+        stack.pop();
+        result.push_back(current->val);
+
+        if (current->right) stack.push(current->right);
+        if (current->left) stack.push(current->left);
     }
 
     return result;
 }
 
 // Post-Order Traversal (Left, Right, Root)
-function postOrderTraversal(root: TreeNode | null): number[] {
-    const result: number[] = [];
-    const stack: TreeNode[] = [];
-    let lastVisited: TreeNode | null = null;
+std::vector<int> postOrderTraversal(TreeNode* root) {
+    std::vector<int> result;
+    if (root == nullptr) return result;
 
-    while (root || stack.length > 0) {
-        while (root) {
+    std::stack<TreeNode*> stack;
+    TreeNode* lastVisited = nullptr;
+
+    while (root != nullptr || !stack.empty()) {
+        while (root != nullptr) {
             stack.push(root);
-            root = root.left;
+            root = root->left;
         }
 
-        const peekNode = stack[stack.length - 1];
-
-        if (!peekNode.right || peekNode.right === lastVisited) {
-            result.push(peekNode.val);
-            lastVisited = stack.pop()!;
+        TreeNode* peekNode = stack.top();
+        if (peekNode->right == nullptr || peekNode->right == lastVisited) {
+            result.push_back(peekNode->val);
+            lastVisited = stack.top();
+            stack.pop();
         } else {
-            root = peekNode.right;
+            root = peekNode->right;
         }
     }
 
@@ -691,23 +703,22 @@ You can be given a list of edges and you have to build your own graph from the e
 
 Using a hash table of hash tables would be the simplest approach during algorithm interviews. It will be rare that you have to use an adjacency matrix or list for graph questions during interviews.
 
-```javascript
+```C++
 // Let's assume you're given a list of edges as input, where each edge is a tuple of two nodes, e.g., ["A", "B"] means there's an edge between nodes "A" and "B"
 
-type Node = string;
-type Graph = Map<Node, Map<Node, boolean>>;
+using Node = std::string;
+using Graph = std::unordered_map<Node, std::unordered_set<Node>>;
 
-function addEdge(graph: Graph, from: Node, to: Node) {
-    if (!graph.has(from)) {
-        graph.set(from, new Map<Node, boolean>());
-    }
-    graph.get(from)!.set(to, true);
+void addEdge(Graph& graph, const Node& from, const Node& to) {
+    graph[from].insert(to);
 }
 
-function buildGraph(edges: [Node, Node][]): Graph {
-    const graph = new Map<Node, Map<Node, boolean>>();
+Graph buildGraph(const std::vector<std::pair<Node, Node>>& edges) {
+    Graph graph;
 
-    for (const [from, to] of edges) {
+    for (const auto& edge : edges) {
+        const Node& from = edge.first;
+        const Node& to = edge.second;
         addEdge(graph, from, to);
         addEdge(graph, to, from); // For undirected graph. Remove this for directed graph.
     }
@@ -715,46 +726,54 @@ function buildGraph(edges: [Node, Node][]): Graph {
     return graph;
 }
 
-// Test
-const edges: [Node, Node][] = [
-    ["A", "B"],
-    ["A", "C"],
-    ["B", "D"],
-    ["C", "D"],
-    ["D", "E"]
-];
+int main() {
+    std::vector<std::pair<Node, Node>> edges = {
+        {"A", "B"},
+        {"A", "C"},
+        {"B", "D"},
+        {"C", "D"},
+        {"D", "E"}
+    };
 
-const graph = buildGraph(edges);
+    Graph graph = buildGraph(edges);
 
-console.log(graph);
+    // Print the graph
+    for (const auto& pair : graph) {
+        std::cout << pair.first << ": ";
+        for (const auto& neighbor : pair.second) {
+            std::cout << neighbor << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    return 0;
+}
 ```
 
 In algorithm interviews, graphs are commonly given in the input as 2D matrices where cells are the nodes and each cell can traverse to its adjacent cells (up/down/left/right). Hence it is important that you be familiar with traversing a 2D matrix. When traversing the matrix, always ensure that your current position is within the boundary of the matrix and has not been visited before.
 
-```javascript
-type Matrix = number[][];
+```C++
+using Matrix = std::vector<std::vector<int>>;
 
-
-// O(rows * cols) -> time and space
-function traverseMatrix(matrix: Matrix): void {
-    if (!matrix || matrix.length === 0 || matrix[0].length === 0) {
+void traverseMatrix(const Matrix& matrix) {
+    if (matrix.empty() || matrix[0].empty()) {
         return;
     }
 
-    const rows = matrix.length;
-    const cols = matrix[0].length;
-    const visited: boolean[][] = Array.from({ length: rows }, () => Array(cols).fill(false));
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+    std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
 
-    function isValid(row: number, col: number): boolean {
+    auto isValid = & {
         return row >= 0 && row < rows && col >= 0 && col < cols && !visited[row][col];
-    }
+    };
 
-    function dfs(row: number, col: number): void {
+    std::function<void(int, int)> dfs = & {
         if (!isValid(row, col)) {
             return;
         }
 
-        console.log(matrix[row][col]); // Process the current cell
+        std::cout << matrix[row][col] << " "; // Process the current cell
         visited[row][col] = true;
 
         // Traverse up/down/left/right
@@ -762,10 +781,10 @@ function traverseMatrix(matrix: Matrix): void {
         dfs(row + 1, col); // Down
         dfs(row, col - 1); // Left
         dfs(row, col + 1); // Right
-    }
+    };
 
-    for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < cols; j++) {
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
             if (!visited[i][j]) {
                 dfs(i, j);
             }
@@ -773,14 +792,17 @@ function traverseMatrix(matrix: Matrix): void {
     }
 }
 
-// Test
-const matrix: Matrix = [
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9]
-];
+int main() {
+    Matrix matrix = {
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9}
+    };
 
-traverseMatrix(matrix);
+    traverseMatrix(matrix);
+
+    return 0;
+}
 ```
 
 ### 2D Matrix as a graph
@@ -806,74 +828,77 @@ Here's a step-by-step guide on how you can transform the problem:
 This transformation is particularly useful when you have more complex conditions for traversal, or when the problem involves finding paths, connected components, etc. It allows you to leverage a wide range of graph algorithms to solve matrix-based problems.
 
 Example
-```javascript
-type Node = [number, number];
-type Graph = Map<string, Node[]>;
+```C++
+using Node = std::pair<int, int>;
+using Graph = std::unordered_map<std::string, std::vector<Node>>;
 
-function matrixToGraph(matrix: number[][]): Graph {
-    const rows = matrix.length;
-    const cols = matrix[0].length;
-    const graph: Graph = new Map();
+std::string getNodeKey(const Node& node) {
+    return std::to_string(node.first) + "," + std::to_string(node.second);
+}
 
-    function getNodeKey(node: Node): string {
-        return `${node[0]},${node[1]}`;
-    }
+std::vector<Node> getAdjacentNodes(int row, int col, int rows, int cols) {
+    std::vector<Node> directions = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};  // Up, Down, Left, Right
+    std::vector<Node> adjacentNodes;
 
-    function getAdjacentNodes(row: number, col: number): Node[] {
-        const directions: Node[] = [[-1, 0], [1, 0], [0, -1], [0, 1]];  // Up, Down, Left, Right
-        const adjacentNodes: Node[] = [];
+    for (const auto& [dx, dy] : directions) {
+        int newRow = row + dx;
+        int newCol = col + dy;
 
-        for (const [dx, dy] of directions) {
-            const newRow = row + dx;
-            const newCol = col + dy;
-
-            if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
-                adjacentNodes.push([newRow, newCol]);
-            }
+        if (newRow >= 0 && newRow < rows && newCol >= 0 && newCol < cols) {
+            adjacentNodes.emplace_back(newRow, newCol);
         }
-
-        return adjacentNodes;
     }
 
-    for (let i = 0; i < rows; i++) {
-        for (let j = 0; j < cols; j++) {
-            const node: Node = [i, j];
-            const key = getNodeKey(node);
-            graph.set(key, getAdjacentNodes(i, j));
+    return adjacentNodes;
+}
+
+Graph matrixToGraph(const std::vector<std::vector<int>>& matrix) {
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+    Graph graph;
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            Node node = {i, j};
+            std::string key = getNodeKey(node);
+            graph[key] = getAdjacentNodes(i, j, rows, cols);
         }
     }
 
     return graph;
 }
 
-function traverseGraph(graph: Graph, startNode: Node): void {
-    const visited: Set<string> = new Set();
+void traverseGraph(const Graph& graph, const Node& startNode) {
+    std::unordered_set<std::string> visited;
 
-    function dfs(node: Node): void {
-        const key = `${node[0]},${node[1]}`;
-        if (visited.has(key)) return;
+    std::function<void(const Node&)> dfs = & {
+        std::string key = getNodeKey(node);
+        if (visited.count(key)) return;
 
-        console.log(node);
-        visited.add(key);
+        std::cout << "(" << node.first << ", " << node.second << ")" << std::endl;
+        visited.insert(key);
 
-        const neighbors = graph.get(key) || [];
-        for (const neighbor of neighbors) {
+        const auto& neighbors = graph.at(key);
+        for (const auto& neighbor : neighbors) {
             dfs(neighbor);
         }
-    }
+    };
 
     dfs(startNode);
 }
 
-// Test
-const matrix: number[][] = [
-    [1, 2, 3],
-    [4, 5, 6],
-    [7, 8, 9]
-];
+int main() {
+    std::vector<std::vector<int>> matrix = {
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9}
+    };
 
-const graph = matrixToGraph(matrix);
-traverseGraph(graph, [0, 0]);  // Start traversal from top-left corner
+    Graph graph = matrixToGraph(matrix);
+    traverseGraph(graph, {0, 0});  // Start traversal from top-left corner
+
+    return 0;
+}
 ```
 
 ### Time complexity
@@ -891,68 +916,132 @@ Ensure you are correctly keeping track of visited nodes and not visiting each no
 
 ### Depth-first search
 
-```python
-def dfs(matrix):
-  # Check for an empty matrix/graph.
-  if not matrix:
-    return []
+```C++
+using Matrix = std::vector<std::vector<int>>;
+using Node = std::pair<int, int>;
+using Direction = std::pair<int, int>;
 
-  rows, cols = len(matrix), len(matrix[0])
-  visited = set()
-  directions = ((0, 1), (0, -1), (1, 0), (-1, 0))
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2>& pair) const {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
 
-  def traverse(i, j):
-    if (i, j) in visited:
-      return
+void dfs(const Matrix& matrix) {
+    if (matrix.empty()) {
+        return;
+    }
 
-    visited.add((i, j))
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+    std::unordered_set<Node, pair_hash> visited;
+    std::vector<Direction> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
-    # Traverse neighbors.
-    for direction in directions:
-      next_i, next_j = i + direction[0], j + direction[1]
-      if 0 <= next_i < rows and 0 <= next_j < cols:
+    std::function<void(int, int)> traverse = & {
+        if (visited.count({i, j})) {
+            return;
+        }
 
-        # Add in question-specific checks, where relevant.
-        traverse(next_i, next_j)
+        visited.insert({i, j});
+        std::cout << matrix[i][j] << " "; // Process the current cell
 
-  for i in range(rows):
-    for j in range(cols):
-      traverse(i, j)
+        // Traverse neighbors
+        for (const auto& direction : directions) {
+            int next_i = i + direction.first;
+            int next_j = j + direction.second;
+            if (next_i >= 0 && next_i < rows && next_j >= 0 && next_j < cols) {
+                traverse(next_i, next_j);
+            }
+        }
+    };
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            traverse(i, j);
+        }
+    }
+}
+
+int main() {
+    Matrix matrix = {
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9}
+    };
+
+    dfs(matrix);
+
+    return 0;
+}
 ```
 
 ### Breadth-first search
 
-```python
-from collections import deque
+```C++
+using Matrix = std::vector<std::vector<int>>;
+using Node = std::pair<int, int>;
+using Direction = std::pair<int, int>;
 
-def bfs(matrix):
-  # Check for an empty matrix/graph.
-  if not matrix:
-    return []
+struct pair_hash {
+    template <class T1, class T2>
+    std::size_t operator() (const std::pair<T1, T2>& pair) const {
+        return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+    }
+};
 
-  rows, cols = len(matrix), len(matrix[0])
-  visited = set()
-  directions = ((0, 1), (0, -1), (1, 0), (-1, 0))
+void bfs(const Matrix& matrix) {
+    if (matrix.empty()) {
+        return;
+    }
 
-  def traverse(i, j):
-    queue = deque([(i, j)])
-    while queue:
-      curr_i, curr_j = queue.popleft()
+    int rows = matrix.size();
+    int cols = matrix[0].size();
+    std::unordered_set<Node, pair_hash> visited;
+    std::vector<Direction> directions = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
-      if (curr_i, curr_j) not in visited:
-        visited.add((curr_i, curr_j))
+    auto traverse = & {
+        std::queue<Node> queue;
+        queue.push({i, j});
 
-        # Traverse neighbors.
-        for direction in directions:
-          next_i, next_j = curr_i + direction[0], curr_j + direction[1]
-          if 0 <= next_i < rows and 0 <= next_j < cols:
+        while (!queue.empty()) {
+            auto [curr_i, curr_j] = queue.front();
+            queue.pop();
 
-            # Add in question-specific checks, where relevant.
-            queue.append((next_i, next_j))
+            if (!visited.count({curr_i, curr_j})) {
+                visited.insert({curr_i, curr_j});
+                std::cout << matrix[curr_i][curr_j] << " "; // Process the current cell
 
-  for i in range(rows):
-    for j in range(cols):
-      traverse(i, j)
+                // Traverse neighbors
+                for (const auto& direction : directions) {
+                    int next_i = curr_i + direction.first;
+                    int next_j = curr_j + direction.second;
+                    if (next_i >= 0 && next_i < rows && next_j >= 0 && next_j < cols) {
+                        queue.push({next_i, next_j});
+                    }
+                }
+            }
+        }
+    };
+
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            traverse(i, j);
+        }
+    }
+}
+
+int main() {
+    Matrix matrix = {
+        {1, 2, 3},
+        {4, 5, 6},
+        {7, 8, 9}
+    };
+
+    bfs(matrix);
+
+    return 0;
+}
 ```
 
 ### Topological sorting
@@ -965,64 +1054,75 @@ Another example is taking courses in university where courses have pre-requisite
 
 In the context of directed graphs, in-degree of a node refers to the number of incoming edges to that node. In simpler terms, it's a count of how many vertices "point to" or "lead to" the given vertex.
 
-```javascript
-type Graph = Map<number, number[]>;
+```C++
+using Graph = std::unordered_map<int, std::vector<int>>;
 
-function topologicalSort(graph: Graph): number[] | null {
-    const numNodes = graph.size;
-    const inDegree: Map<number, number> = new Map();
-    const zeroInDegreeQueue: number[] = [];
-    const result: number[] = [];
+std::vector<int> topologicalSort(const Graph& graph) {
+    std::unordered_map<int, int> inDegree;
+    std::queue<int> zeroInDegreeQueue;
+    std::vector<int> result;
 
     // Initialize in-degree counts
-    for (const [node, neighbors] of graph.entries()) {
-        inDegree.set(node, 0);
+    for (const auto& [node, neighbors] : graph) {
+        inDegree[node] = 0;
     }
 
-    for (const [, neighbors] of graph.entries()) {
-        for (const neighbor of neighbors) {
-            inDegree.set(neighbor, (inDegree.get(neighbor) || 0) + 1);
+    for (const auto& [node, neighbors] : graph) {
+        for (const int neighbor : neighbors) {
+            inDegree[neighbor]++;
         }
     }
 
     // Find all nodes with zero in-degree
-    for (const [node, degree] of inDegree.entries()) {
-        if (degree === 0) {
+    for (const auto& [node, degree] : inDegree) {
+        if (degree == 0) {
             zeroInDegreeQueue.push(node);
         }
     }
 
-    while (zeroInDegreeQueue.length) {
-        const current = zeroInDegreeQueue.shift()!;
-        result.push(current);
+    while (!zeroInDegreeQueue.empty()) {
+        int current = zeroInDegreeQueue.front();
+        zeroInDegreeQueue.pop();
+        result.push_back(current);
 
-        const neighbors = graph.get(current) || [];
-        for (const neighbor of neighbors) {
-            inDegree.set(neighbor, inDegree.get(neighbor)! - 1);
-            if (inDegree.get(neighbor) === 0) {
+        const auto& neighbors = graph.at(current);
+        for (const int neighbor : neighbors) {
+            inDegree[neighbor]--;
+            if (inDegree[neighbor] == 0) {
                 zeroInDegreeQueue.push(neighbor);
             }
         }
     }
 
-    if (result.length !== numNodes) {
-        return null;  // Graph has a cycle
+    if (result.size() != graph.size()) {
+        return {};  // Graph has a cycle
     }
 
     return result;
 }
 
-// Test
-const graph: Graph = new Map();
-graph.set(5, [2]);
-graph.set(4, [0, 2]);
-graph.set(2, [3]);
-graph.set(3, [1]);
-graph.set(1, []);
-graph.set(0, []);
+int main() {
+    Graph graph;
+    graph[5] = {2};
+    graph[4] = {0, 2};
+    graph[2] = {3};
+    graph[3] = {1};
+    graph[1] = {};
+    graph[0] = {};
 
-const sortedOrder = topologicalSort(graph);
-console.log(sortedOrder);  // Possible output: [5, 4, 2, 3, 1, 0]
+    std::vector<int> sortedOrder = topologicalSort(graph);
+    if (sortedOrder.empty()) {
+        std::cout << "Graph has a cycle." << std::endl;
+    } else {
+        std::cout << "Topological Sort Order: ";
+        for (int node : sortedOrder) {
+            std::cout << node << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    return 0;
+}
 ```
 
 ## Heap
@@ -1053,60 +1153,74 @@ Tries are special trees (prefix trees) that make searching and storing strings m
 Be familiar with implementing from scratch, a Trie class and its add, remove and search methods.
 
 Example:
-```javascript
+```C++
 class TrieNode {
-    children: { [key: string]: TrieNode } = {};
-    isEndOfWord: boolean = false;
-}
+public:
+    std::unordered_map<char, TrieNode*> children;
+    bool isEndOfWord;
+
+    TrieNode() : isEndOfWord(false) {}
+};
 
 class Trie {
-    private root: TrieNode = new TrieNode();
+private:
+    TrieNode* root;
+
+public:
+    Trie() {
+        root = new TrieNode();
+    }
 
     // Inserts a word into the trie
-    insert(word: string): void {
-        let currentNode = this.root;
-        for (let char of word) {
-            if (!currentNode.children[char]) {
-                currentNode.children[char] = new TrieNode();
+    void insert(const std::string& word) {
+        TrieNode* currentNode = root;
+        for (char ch : word) {
+            if (currentNode->children.find(ch) == currentNode->children.end()) {
+                currentNode->children[ch] = new TrieNode();
             }
-            currentNode = currentNode.children[char];
+            currentNode = currentNode->children[ch];
         }
-        currentNode.isEndOfWord = true;
+        currentNode->isEndOfWord = true;
     }
 
     // Returns if the word is in the trie
-    search(word: string): boolean {
-        let currentNode = this.root;
-        for (let char of word) {
-            if (!currentNode.children[char]) {
+    bool search(const std::string& word) {
+        TrieNode* currentNode = root;
+        for (char ch : word) {
+            if (currentNode->children.find(ch) == currentNode->children.end()) {
                 return false;
             }
-            currentNode = currentNode.children[char];
+            currentNode = currentNode->children[ch];
         }
-        return currentNode.isEndOfWord;
+        return currentNode->isEndOfWord;
     }
 
     // Returns if there's any word in the trie that starts with the given prefix
-    startsWith(prefix: string): boolean {
-        let currentNode = this.root;
-        for (let char of prefix) {
-            if (!currentNode.children[char]) {
+    bool startsWith(const std::string& prefix) {
+        TrieNode* currentNode = root;
+        for (char ch : prefix) {
+            if (currentNode->children.find(ch) == currentNode->children.end()) {
                 return false;
             }
-            currentNode = currentNode.children[char];
+            currentNode = currentNode->children[ch];
         }
         return true;
     }
-}
+};
 
 // Test
-const trie = new Trie();
-trie.insert("apple");
-console.log(trie.search("apple"));    // Expected output: true
-console.log(trie.search("app"));      // Expected output: false
-console.log(trie.startsWith("app"));  // Expected output: true
-trie.insert("app");
-console.log(trie.search("app"));      // Expected output: true
+int main() {
+    Trie trie;
+    trie.insert("apple");
+    std::cout << std::boolalpha;
+    std::cout << "Search 'apple': " << trie.search("apple") << std::endl;    // Expected output: true
+    std::cout << "Search 'app': " << trie.search("app") << std::endl;        // Expected output: false
+    std::cout << "Starts with 'app': " << trie.startsWith("app") << std::endl;  // Expected output: true
+    trie.insert("app");
+    std::cout << "Search 'app': " << trie.search("app") << std::endl;        // Expected output: true
+
+    return 0;
+}
 ```
 
 ### Time complexity
@@ -1123,38 +1237,38 @@ Sometimes preprocessing a dictionary of words (given in a list) into a trie, wil
 ## Geometry
 
 Distance between two points
-```javascript
-type Point = {
-    x: number,
-    y: number
+```C++
+struct Point {
+    double x;
+    double y;
 };
 
-function distanceBetweenTwoPoints(point1: Point, point2: Point): number {
-    return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
+double distanceBetweenTwoPoints(const Point& point1, const Point& point2) {
+    return std::sqrt(std::pow(point2.x - point1.x, 2) + std::pow(point2.y - point1.y, 2));
 }
 ```
 
 Overlapping Circles
-```javascript
-type Circle = {
-    center: Point,
-    radius: number
+```C++
+struct Circle {
+    Point center;
+    double radius;
 };
 
-function areCirclesOverlapping(circle1: Circle, circle2: Circle): boolean {
-    const distance = distanceBetweenTwoPoints(circle1.center, circle2.center);
+bool areCirclesOverlapping(const Circle& circle1, const Circle& circle2) {
+    double distance = distanceBetweenTwoPoints(circle1.center, circle2.center);
     return distance <= (circle1.radius + circle2.radius);
 }
 ```
 
 Overlapping Rectanges
-```javascript
-type Rectangle = {
-    topLeft: Point,
-    bottomRight: Point
+```C++
+struct Rectangle {
+    Point topLeft;
+    Point bottomRight;
 };
 
-function areRectanglesOverlapping(rect1: Rectangle, rect2: Rectangle): boolean {
+bool areRectanglesOverlapping(const Rectangle& rect1, const Rectangle& rect2) {
     // Check if one rectangle is to the left of the other
     if (rect1.topLeft.x > rect2.bottomRight.x || rect2.topLeft.x > rect1.bottomRight.x) {
         return false;
@@ -1174,101 +1288,109 @@ function areRectanglesOverlapping(rect1: Rectangle, rect2: Rectangle): boolean {
 ## Robot Room Cleaner
 Link: https://leetcode.com/problems/robot-room-cleaner/description/
 
-```javascript
-/**
- * class Robot {
- *      // Returns true if the cell in front is open and robot moves into the cell.
- *      // Returns false if the cell in front is blocked and robot stays in the current cell.
- * 		move(): boolean {}
- * 		
- *      // Robot will stay in the same cell after calling turnLeft/turnRight.
- *      // Each turn will be 90 degrees.
- * 		turnRight() {}
- * 		
- *      // Robot will stay in the same cell after calling turnLeft/turnRight.
- *      // Each turn will be 90 degrees.
- * 		turnLeft() {}
- * 		
- * 		// Clean the current cell.
- * 		clean(): {}
- * }
- */
+```C++
+class Robot {
+public:
+    // Returns true if the cell in front is open and robot moves into the cell.
+    // Returns false if the cell in front is blocked and robot stays in the current cell.
+    bool move() {
+        // Implementation provided by the environment
+    }
 
-function cleanRoom(robot: Robot) {
-    const dirs = [[-1, 0], [0, 1], [1, 0], [0, -1]];
-    const visited = new Set();
+    // Robot will stay in the same cell after calling turnLeft/turnRight.
+    // Each turn will be 90 degrees.
+    void turnRight() {
+        // Implementation provided by the environment
+    }
 
-    const goBack = () => {
+    void turnLeft() {
+        // Implementation provided by the environment
+    }
+
+    // Clean the current cell.
+    void clean() {
+        // Implementation provided by the environment
+    }
+};
+
+void cleanRoom(Robot& robot) {
+    std::vector<std::vector<int>> dirs = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+    std::unordered_set<std::string> visited;
+
+    auto goBack = &robot {
         robot.turnRight();
         robot.turnRight();
         robot.move();
         robot.turnRight();
         robot.turnRight();
-    }
+    };
 
-    const backtrack = (row: number, col: number, d: number) => {
-        visited.add([row, col].join());
+    std::function<void(int, int, int)> backtrack = & {
+        visited.insert(std::to_string(row) + "," + std::to_string(col));
         robot.clean();
 
-        for (let i = 0; i < 4; ++i) {
-            const newD = (d + i) % 4;
-            const [newRow, newCol] = [row + dirs[newD][0], col + dirs[newD][1]];
+        for (int i = 0; i < 4; ++i) {
+            int newD = (d + i) % 4;
+            int newRow = row + dirs[newD][0];
+            int newCol = col + dirs[newD][1];
 
-            if (!visited.has([newRow, newCol].join()) && robot.move()) {
+            if (visited.find(std::to_string(newRow) + "," + std::to_string(newCol)) == visited.end() && robot.move()) {
                 backtrack(newRow, newCol, newD);
                 goBack();
             }
 
             robot.turnRight();
         }
-    }
+    };
 
     backtrack(0, 0, 0);
-};
+}
 ```
 
 ## Kadane's Algorithm
 
 Kadane's algorithm is used to find the maximum sum of a contiguous subarray within a one-dimensional array of numbers.
 
-```javascript
-function maxSubArraySum(arr: number[]): number {
-    if (arr.length === 0) {
+```C++
+int maxSubArraySum(const std::vector<int>& arr) {
+    if (arr.empty()) {
         return 0;
     }
 
-    let maxCurrent = arr[0];
-    let maxGlobal = arr[0];
+    int maxCurrent = arr[0];
+    int maxGlobal = arr[0];
 
-    for (let i = 1; i < arr.length; i++) {
-        maxCurrent = Math.max(arr[i], maxCurrent + arr[i]);
-        maxGlobal = Math.max(maxGlobal, maxCurrent);
+    for (size_t i = 1; i < arr.size(); ++i) {
+        maxCurrent = std::max(arr[i], maxCurrent + arr[i]);
+        maxGlobal = std::max(maxGlobal, maxCurrent);
     }
 
     return maxGlobal;
 }
 
-// Example usage:
-const numbers = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
-console.log(maxSubArraySum(numbers));  // Outputs: 6 (because [4, -1, 2, 1] has the largest sum)
+int main() {
+    std::vector<int> numbers = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+    std::cout << "Maximum subarray sum: " << maxSubArraySum(numbers) << std::endl;  // Outputs: 6 (because [4, -1, 2, 1] has the largest sum)
+
+    return 0;
+}
 ```
 
 If you want to track the start and end indices of the subarray with the largest sum, you can use the following code:
 
-```javascript
-function maxSubArraySumWithIndices(arr: number[]): { sum: number, start: number, end: number } {
-    if (arr.length === 0) {
-        return { sum: 0, start: -1, end: -1 };
+```C++
+std::tuple<int, int, int> maxSubArraySumWithIndices(const std::vector<int>& arr) {
+    if (arr.empty()) {
+        return {0, -1, -1};
     }
 
-    let maxCurrent = arr[0];
-    let maxGlobal = arr[0];
+    int maxCurrent = arr[0];
+    int maxGlobal = arr[0];
+    int start = 0;
+    int end = 0;
+    int tempStart = 0;
 
-    let start = 0;
-    let end = 0;
-    let tempStart = 0;
-
-    for (let i = 1; i < arr.length; i++) {
+    for (size_t i = 1; i < arr.size(); ++i) {
         if (arr[i] > maxCurrent + arr[i]) {
             maxCurrent = arr[i];
             tempStart = i;
@@ -1283,14 +1405,17 @@ function maxSubArraySumWithIndices(arr: number[]): { sum: number, start: number,
         }
     }
 
-    return { sum: maxGlobal, start: start, end: end };
+    return {maxGlobal, start, end};
 }
 
-// Example usage:
-const numbers = [-2, 1, -3, 4, -1, 2, 1, -5, 4];
-const result = maxSubArraySumWithIndices(numbers);
-console.log(`Max sum is: ${result.sum} from index ${result.start} to ${result.end}`);  
-// Outputs: Max sum is: 6 from index 3 to 6 (because [4, -1, 2, 1] has the largest sum)
+int main() {
+    std::vector<int> numbers = {-2, 1, -3, 4, -1, 2, 1, -5, 4};
+    auto [sum, start, end] = maxSubArraySumWithIndices(numbers);
+    std::cout << "Max sum is: " << sum << " from index " << start << " to " << end << std::endl;
+    // Outputs: Max sum is: 6 from index 3 to 6 (because [4, -1, 2, 1] has the largest sum)
+
+    return 0;
+}
 ```
 
 ## Great Explanation of Dynamic Programming (DP)
@@ -1299,7 +1424,7 @@ console.log(`Max sum is: ${result.sum} from index ${result.start} to ${result.en
 
 ## Disjoint Union Set (DSU)
 
-```javascript
+```C++
 /*
 Return the lexicographically smallest string that s can be changed to after using the swaps.
 
@@ -1315,64 +1440,83 @@ Swap s[0] and s[1], s = "abc"
 Input: s = "cbfdae", pairs = [[0,1],[3,2],[5,2],[1,4]]
 Output: "abdecf"
 */
-function smallestStringWithSwaps(s: string, pairs: number[][]): string {
-    const parent: number[] = [];
-    for (let i = 0; i < s.length; i++) {
-        parent[i] = i;
+class DSU {
+public:
+    DSU(int n) : parent(n) {
+        for (int i = 0; i < n; ++i) {
+            parent[i] = i;
+        }
     }
 
-    // Find the parent of a node
-    function find(i: number): number {
-        if (i !== parent[i]) {
+    int find(int i) {
+        if (i != parent[i]) {
             parent[i] = find(parent[i]);
         }
         return parent[i];
     }
 
-    // Union the two nodes
-    function union(i: number, j: number) {
+    void unionSets(int i, int j) {
         parent[find(i)] = find(j);
     }
 
+private:
+    std::vector<int> parent;
+};
+
+std::string smallestStringWithSwaps(const std::string& s, const std::vector<std::pair<int, int>>& pairs) {
+    int n = s.size();
+    DSU dsu(n);
+
     // Create the disjoint set using the pairs
-    for (let [i, j] of pairs) {
-        union(i, j);
+    for (const auto& p : pairs) {
+        dsu.unionSets(p.first, p.second);
     }
 
     // Create mapping of root -> [indices]
-    const indexGroups: { [key: number]: number[] } = {};
-    for (let i = 0; i < s.length; i++) {
-        const root = find(i);
-        if (!indexGroups[root]) {
-            indexGroups[root] = [];
-        }
-        indexGroups[root].push(i);
+    std::unordered_map<int, std::vector<int>> indexGroups;
+    for (int i = 0; i < n; ++i) {
+        int root = dsu.find(i);
+        indexGroups[root].push_back(i);
     }
 
-    let chars: string[] = s.split('');
-    for (let indices of Object.values(indexGroups)) {
-        const sortedChars = indices.map(i => chars[i]).sort();
-        for (let i = 0; i < indices.length; i++) {
-            chars[indices[i]] = sortedChars[i];
+    std::string result = s;
+    for (const auto& group : indexGroups) {
+        std::vector<char> chars;
+        for (int index : group.second) {
+            chars.push_back(s[index]);
+        }
+        std::sort(chars.begin(), chars.end());
+        for (size_t i = 0; i < group.second.size(); ++i) {
+            result[group.second[i]] = chars[i];
         }
     }
 
-    return chars.join('');
+    return result;
 }
 
-// Test cases
-console.log(smallestStringWithSwaps("dcab", [[0, 3], [1, 2]])); // "bacd"
-console.log(smallestStringWithSwaps("cba", [[0, 1], [1, 2]]));  // "abc"
-console.log(smallestStringWithSwaps("cbfdae", [[0, 1], [3, 2], [5, 2], [1, 4]])); // "abdecf"
+int main() {
+    std::string s1 = "dcab";
+    std::vector<std::pair<int, int>> pairs1 = {{0, 3}, {1, 2}};
+    std::cout << smallestStringWithSwaps(s1, pairs1) << std::endl; // Outputs: "bacd"
 
+    std::string s2 = "cba";
+    std::vector<std::pair<int, int>> pairs2 = {{0, 1}, {1, 2}};
+    std::cout << smallestStringWithSwaps(s2, pairs2) << std::endl; // Outputs: "abc"
+
+    std::string s3 = "cbfdae";
+    std::vector<std::pair<int, int>> pairs3 = {{0, 1}, {3, 2}, {5, 2}, {1, 4}};
+    std::cout << smallestStringWithSwaps(s3, pairs3) << std::endl; // Outputs: "abdecf"
+
+    return 0;
+}
 ```
 
 Let's dry run the `smallestStringWithSwaps` function with the input string `s = "dcab"` and pairs `[[0,3],[1,2]]`.
 
 **Initialization**:
-```typescript
-const parent: number[] = [];
-for (let i = 0; i < s.length; i++) {
+```C++
+std::vector<int> parent(s.length());
+for (int i = 0; i < s.length(); ++i) {
     parent[i] = i;
 }
 ```
@@ -1391,14 +1535,14 @@ This initializes each character's index as its own parent:
 
 **Create mapping of root to its indices**:
 We want to know which indices belong to which set. 
-```typescript
-const indexGroups: { [key: number]: number[] } = {};
-for (let i = 0; i < s.length; i++) {
-    const root = find(i);
-    if (!indexGroups[root]) {
-        indexGroups[root] = [];
+```C++
+std::unordered_map<int, std::vector<int>> indexGroups;
+for (int i = 0; i < s.length(); ++i) {
+    int root = find(i);
+    if (indexGroups.find(root) == indexGroups.end()) {
+        indexGroups[root] = std::vector<int>();
     }
-    indexGroups[root].push(i);
+    indexGroups[root].push_back(i);
 }
 ```
 After this loop, `indexGroups` becomes:
@@ -1412,14 +1556,23 @@ This means characters at indices `0` and `3` can be swapped with each other, and
 
 **Reorder characters within each set**:
 We want the characters in each group to be sorted in ascending order to make the string lexicographically smallest.
-```typescript
-let chars: string[] = s.split('');
-for (let indices of Object.values(indexGroups)) {
-    const sortedChars = indices.map(i => chars[i]).sort();
-    for (let i = 0; i < indices.length; i++) {
-        chars[indices[i]] = sortedChars[i];
+```C++
+std::string s = "your_string_here"; // Replace with your actual string
+std::unordered_map<int, std::vector<int>> indexGroups; // Assume this is already populated
+
+std::vector<char> chars(s.begin(), s.end());
+for (const auto& group : indexGroups) {
+    std::vector<char> sortedChars;
+    for (int index : group.second) {
+        sortedChars.push_back(chars[index]);
+    }
+    std::sort(sortedChars.begin(), sortedChars.end());
+    for (size_t i = 0; i < group.second.size(); ++i) {
+        chars[group.second[i]] = sortedChars[i];
     }
 }
+
+std::string result(chars.begin(), chars.end());
 ```
 1. For `indices = [0, 3]` (i.e., characters `'d'` and `'b'`):
    - Sort them to get `'b'` and `'d'`.
@@ -1464,14 +1617,15 @@ For `5`, there is no larger number, hence `-1`.
 For `1`, there is no larger number, hence `-1`.
 
 **Typescript Solution using Monotonic Stack:**
-```typescript
-function nextLargerElement(nums: number[]): number[] {
-    const result: number[] = Array(nums.length).fill(-1); // initialize result array with -1s
-    const stack: number[] = []; // this will store indices
+```C++
+std::vector<int> nextLargerElement(const std::vector<int>& nums) {
+    std::vector<int> result(nums.size(), -1); // initialize result vector with -1s
+    std::stack<int> stack; // this will store indices
 
-    for (let i = 0; i < nums.length; i++) {
-        while (stack.length && nums[i] > nums[stack[stack.length - 1]]) {
-            const idx = stack.pop() as number; // get the last index from the stack
+    for (int i = 0; i < nums.size(); ++i) {
+        while (!stack.empty() && nums[i] > nums[stack.top()]) {
+            int idx = stack.top();
+            stack.pop(); // get the last index from the stack
             result[idx] = nums[i]; // we found the next greater element for the element at index `idx`
         }
         stack.push(i); // push the current index to the stack
@@ -1480,9 +1634,16 @@ function nextLargerElement(nums: number[]): number[] {
     return result;
 }
 
-// Testing the function
-const input = [4, 3, 2, 5, 1];
-console.log(nextLargerElement(input)); // Expected output: [5, 5, 5, -1, -1]
+int main() {
+    std::vector<int> input = {4, 3, 2, 5, 1};
+    std::vector<int> output = nextLargerElement(input);
+
+    for (int num : output) {
+        std::cout << num << " ";
+    }
+    // Expected output: 5 5 5 -1 -1
+    return 0;
+}
 ```
 
 In this solution, we're keeping the stack in non-decreasing order. When a larger number is found, we keep popping from the stack until we find a number that's greater than the current one or the stack becomes empty. This helps in finding the next larger number for all the numbers that are smaller than the current number.
@@ -1503,25 +1664,28 @@ Then buy on day 4 (price = 3) and sell on day 5 (price = 6), profit = 6-3 = 3.
 Total profit is 4 + 3 = 7.
 ```
 
-```javascript
+```C++
 class Solution {
-    public int maxProfit(int[] prices) {
+public:
+    int maxProfit(const std::vector<int>& prices) {
         int i = 0;
         int valley = prices[0];
         int peak = prices[0];
         int maxprofit = 0;
-        while (i < prices.length - 1) {
-            while (i < prices.length - 1 && prices[i] >= prices[i + 1])
+        
+        while (i < prices.size() - 1) {
+            while (i < prices.size() - 1 && prices[i] >= prices[i + 1])
                 i++;
             valley = prices[i];
-            while (i < prices.length - 1 && prices[i] <= prices[i + 1])
+            while (i < prices.size() - 1 && prices[i] <= prices[i + 1])
                 i++;
             peak = prices[i];
             maxprofit += peak - valley;
         }
+        
         return maxprofit;
     }
-}
+};
 ```
 
 ## Dijkstra's algorithm
@@ -1545,49 +1709,67 @@ Here are the basic steps:
    - The algorithm ends when every node has been visited. The algorithm has now constructed the shortest path tree from the source node to all other nodes.
 
 ### TypeScript Implementation:
-```typescript
-type Graph = {
-    [key: string]: { [key: string]: number };
+```C++
+using Graph = std::unordered_map<std::string, std::unordered_map<std::string, int>>;
+
+struct DijkstraResult {
+    std::unordered_map<std::string, int> distances;
+    std::unordered_map<std::string, std::string> previous;
 };
 
-const dijkstra = (graph: Graph, start: string): { distances: { [key: string]: number }, previous: { [key: string]: string | null } } => {
-    let distances: { [key: string]: number } = {};
-    let previous: { [key: string]: string | null } = {};
-    let unvisitedNodes = Object.keys(graph);
+DijkstraResult dijkstra(const Graph& graph, const std::string& start) {
+    std::unordered_map<std::string, int> distances;
+    std::unordered_map<std::string, std::string> previous;
+    std::vector<std::string> unvisitedNodes;
 
-    for (let node of unvisitedNodes) {
-        distances[node] = Infinity;
-        previous[node] = null;
+    for (const auto& node : graph) {
+        distances[node.first] = std::numeric_limits<int>::max();
+        previous[node.first] = "";
+        unvisitedNodes.push_back(node.first);
     }
     distances[start] = 0;
 
-    while (unvisitedNodes.length !== 0) {
-        unvisitedNodes.sort((a, b) => distances[a] - distances[b]);
-        let currentNode = unvisitedNodes.shift() as string;
+    while (!unvisitedNodes.empty()) {
+        std::sort(unvisitedNodes.begin(), unvisitedNodes.end(), &distances {
+            return distances[a] < distances[b];
+        });
+        std::string currentNode = unvisitedNodes.front();
+        unvisitedNodes.erase(unvisitedNodes.begin());
 
-        for (let neighbor in graph[currentNode]) {
-            let newDistance = distances[currentNode] + graph[currentNode][neighbor];
-
-            if (newDistance < distances[neighbor]) {
-                distances[neighbor] = newDistance;
-                previous[neighbor] = currentNode;
+        for (const auto& neighbor : graph.at(currentNode)) {
+            int newDistance = distances[currentNode] + neighbor.second;
+            if (newDistance < distances[neighbor.first]) {
+                distances[neighbor.first] = newDistance;
+                previous[neighbor.first] = currentNode;
             }
         }
     }
-    return { distances, previous };
-};
 
-// Example Usage:
-const exampleGraph: Graph = {
-    A: { B: 1, D: 3 },
-    B: { A: 1, D: 2, E: 5 },
-    D: { A: 3, B: 2, E: 1 },
-    E: { B: 5, D: 1 },
-};
+    return {distances, previous};
+}
 
-let result = dijkstra(exampleGraph, "A");
-console.log(result.distances);
-console.log(result.previous);
+int main() {
+    Graph exampleGraph = {
+        {"A", {{"B", 1}, {"D", 3}}},
+        {"B", {{"A", 1}, {"D", 2}, {"E", 5}}},
+        {"D", {{"A", 3}, {"B", 2}, {"E", 1}}},
+        {"E", {{"B", 5}, {"D", 1}}}
+    };
+
+    DijkstraResult result = dijkstra(exampleGraph, "A");
+
+    std::cout << "Distances:\n";
+    for (const auto& [node, distance] : result.distances) {
+        std::cout << node << ": " << distance << "\n";
+    }
+
+    std::cout << "\nPrevious:\n";
+    for (const auto& [node, prev] : result.previous) {
+        std::cout << node << ": " << prev << "\n";
+    }
+
+    return 0;
+}
 ```
 
 ### Dry Run:
@@ -1698,55 +1880,65 @@ Quick Sort is a divide-and-conquer algorithm that works on the principle of choo
 
 Now, here's an example of Quick Sort implemented in TypeScript:
 
-```typescript
-function quickSort(arr: number[], low: number, high: number): void {
-  if (low < high) {
-    // Partition the array and get the pivot index
-    let pi = partition(arr, low, high);
+```C++
+void quickSort(std::vector<int>& arr, int low, int high) {
+    if (low < high) {
+        // Partition the array and get the pivot index
+        int pi = partition(arr, low, high);
 
-    // Recursively sort the elements before partition and after partition
-    quickSort(arr, low, pi - 1);
-    quickSort(arr, pi + 1, high);
-  }
+        // Recursively sort the elements before partition and after partition
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
+    }
 }
 
-function partition(arr: number[], low: number, high: number): number {
-  // Choose the rightmost element as pivot
-  let pivot = arr[high];
+int partition(std::vector<int>& arr, int low, int high) {
+    // Choose the rightmost element as pivot
+    int pivot = arr[high];
 
-  // Pointer for greater element
-  let i = low - 1;
+    // Pointer for greater element
+    int i = low - 1;
 
-  // Traverse through all elements
-  // compare each element with pivot
-  for (let j = low; j < high; j++) {
-    if (arr[j] < pivot) {
-      // If element smaller than pivot is found
-      // swap it with the greater element pointed by i
-      i++;
-
-      // Swapping element at i with element at j
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+    // Traverse through all elements
+    // compare each element with pivot
+    for (int j = low; j < high; j++) {
+        if (arr[j] < pivot) {
+            // If element smaller than pivot is found
+            // swap it with the greater element pointed by i
+            i++;
+            std::swap(arr[i], arr[j]);
+        }
     }
-  }
 
-  // Swap the pivot element with the greater element specified by i
-  [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+    // Swap the pivot element with the greater element specified by i
+    std::swap(arr[i + 1], arr[high]);
 
-  // Return the position from where partition is done
-  return i + 1;
+    // Return the position from where partition is done
+    return i + 1;
 }
 
 // Helper function to initiate QuickSort
-function quickSortHelper(arr: number[]): number[] {
-  quickSort(arr, 0, arr.length - 1);
-  return arr;
+std::vector<int> quickSortHelper(std::vector<int>& arr) {
+    quickSort(arr, 0, arr.size() - 1);
+    return arr;
 }
 
-// Example usage:
-const arr = [10, 7, 8, 9, 1, 5];
-console.log('Original Array:', arr);
-const sortedArray = quickSortHelper(arr);
-console.log('Sorted Array:', sortedArray);
+int main() {
+    std::vector<int> arr = {10, 7, 8, 9, 1, 5};
+    std::cout << "Original Array: ";
+    for (int num : arr) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+
+    std::vector<int> sortedArray = quickSortHelper(arr);
+    std::cout << "Sorted Array: ";
+    for (int num : sortedArray) {
+        std::cout << num << " ";
+    }
+    std::cout << std::endl;
+
+    return 0;
+}
 ```
 
