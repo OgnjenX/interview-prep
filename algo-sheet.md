@@ -192,89 +192,41 @@ Helper Method - MoveToHead(node):
 
 Example
 ```C++
-class ListNode {
-public:
-    int key;
-    int value;
-    ListNode* prev;
-    ListNode* next;
-
-    ListNode(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
-};
-
 class LRUCache {
 private:
     int capacity;
-    std::unordered_map<int, ListNode*> map;
-    ListNode* head;
-    ListNode* tail;
+    std::unordered_map<int, std::pair<int, std::deque<int>::iterator>> cache;
+    std::deque<int> order;
 
-    void moveToHead(ListNode* node) {
-        removeNode(node);
-        addToHead(node);
-    }
-
-    void addToHead(ListNode* node) {
-        node->prev = head;
-        node->next = head->next;
-        head->next->prev = node;
-        head->next = node;
-    }
-
-    void removeNode(ListNode* node) {
-        ListNode* prevNode = node->prev;
-        ListNode* nextNode = node->next;
-        prevNode->next = nextNode;
-        nextNode->prev = prevNode;
-    }
-
-    ListNode* removeTail() {
-        ListNode* tailNode = tail->prev;
-        removeNode(tailNode);
-        return tailNode;
+    void moveToFront(int key) {
+        order.erase(cache[key].second);
+        order.push_front(key);
+        cache[key].second = order.begin();
     }
 
 public:
-    LRUCache(int cap) : capacity(cap) {
-        head = new ListNode(0, 0);
-        tail = new ListNode(0, 0);
-        head->next = tail;
-        tail->prev = head;
-    }
+    LRUCache(int cap) : capacity(cap) {}
 
     int get(int key) {
-        if (map.find(key) == map.end()) {
+        if (cache.find(key) == cache.end()) {
             return -1;
         }
-        ListNode* node = map[key];
-        moveToHead(node);
-        return node->value;
+        moveToFront(key);
+        return cache[key].first;
     }
 
     void put(int key, int value) {
-        if (map.find(key) != map.end()) {
-            ListNode* node = map[key];
-            node->value = value;
-            moveToHead(node);
+        if (cache.find(key) != cache.end()) {
+            cache[key].first = value;
+            moveToFront(key);
         } else {
-            ListNode* newNode = new ListNode(key, value);
-            map[key] = newNode;
-            addToHead(newNode);
-
-            if (map.size() > capacity) {
-                ListNode* tailNode = removeTail();
-                map.erase(tailNode->key);
-                delete tailNode;
+            if (cache.size() == capacity) {
+                int lruKey = order.back();
+                order.pop_back();
+                cache.erase(lruKey);
             }
-        }
-    }
-
-    ~LRUCache() {
-        ListNode* current = head;
-        while (current != nullptr) {
-            ListNode* next = current->next;
-            delete current;
-            current = next;
+            order.push_front(key);
+            cache[key] = {value, order.begin()};
         }
     }
 };
