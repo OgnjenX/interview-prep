@@ -1266,10 +1266,12 @@ public:
 };
 
 void cleanRoom(Robot& robot) {
+    // Directions: up, right, down, left
     std::vector<std::vector<int>> dirs = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
     std::unordered_set<std::string> visited;
 
-    auto goBack = &robot {
+    // Lambda function to go back to the previous position
+    auto goBack = [&robot]() {
         robot.turnRight();
         robot.turnRight();
         robot.move();
@@ -1277,26 +1279,32 @@ void cleanRoom(Robot& robot) {
         robot.turnRight();
     };
 
-    std::function<void(int, int, int)> backtrack = & {
+    // Backtracking function
+    std::function<void(int, int, int)> backtrack = [&](int row, int col, int d) {
         visited.insert(std::to_string(row) + "," + std::to_string(col));
         robot.clean();
 
+        // Explore 4 directions: up, right, down, left
         for (int i = 0; i < 4; ++i) {
             int newD = (d + i) % 4;
             int newRow = row + dirs[newD][0];
             int newCol = col + dirs[newD][1];
 
+            // If the new cell is not visited and the robot can move, go there
             if (visited.find(std::to_string(newRow) + "," + std::to_string(newCol)) == visited.end() && robot.move()) {
                 backtrack(newRow, newCol, newD);
                 goBack();
             }
 
+            // Turn the robot to the next direction
             robot.turnRight();
         }
     };
 
+    // Start the backtracking from (0, 0) with an initial direction of 0 (up)
     backtrack(0, 0, 0);
 }
+
 ```
 
 ## Kadane's Algorithm
